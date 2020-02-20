@@ -1,3 +1,4 @@
+const rimraf = require("rimraf");
 const dotenv = require("dotenv");
 dotenv.config();
 const simpleGit = require("simple-git")(process.env.WORKSPACE);
@@ -5,24 +6,31 @@ const simpleGit = require("simple-git")(process.env.WORKSPACE);
 module.exports = app => {
   app.on("pull_request.opened", async context => {
     console.log(context.payload);
-    cloneCommit(context);
+    await cleanWorkspace();
+    await cloneCommit(context);
     startSonarQubeScan(context);
     updatePendingStatus(context);
   });
 
   const router = app.route("/my-app");
 
-  router.get("/hello-world", (req, res) => {
+  router.post("/sonarqube-webhook", (req, res) => {
     res.send("Hello Wordl");
   });
 };
 
-function cloneCommit(context) {
+function cleanWorkspace() {
+  rimraf.sync(`${process.env.WORKSPACE}/*`);
+}
+
+async function cloneCommit(context) {
   const cloneUrl = context.payload.pull_request.base.repo.clone_url;
   const ref = context.payload.pull_request.head.ref;
-  simpleGit
-    .clone(cloneUrl, ["--single-branch", `--branch=${ref}`, "--depth=1"])
-    .then(() => console.log("done cloning"));
+  await simpleGit.clone(cloneUrl, [
+    "--single-branch",
+    `--branch=${ref}`,
+    "--depth=1"
+  ]);
 }
 
 function startSonarQubeScan(context) {

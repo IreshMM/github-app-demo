@@ -24,6 +24,7 @@
     "dotenv": "^8.2.0",
     "maven": "^4.7.0",
     "probot": "^9.5.3",
+    "rimraf": "^3.0.2",
     "simple-git": "^1.131.0"
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+const bodyParser = require('body-parser');
 const rimraf = require("rimraf");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -12,10 +13,16 @@ module.exports = app => {
     updatePendingStatus(context);
   });
 
-  const router = app.route("/my-app");
+  const router = app.route("/");
+  router.use(bodyParser.json());
 
-  router.post("/sonarqube-webhook", (req, res) => {
+  router.get("/s", (req, res) => {
     res.send("Hello Wordl");
+  });
+	
+  router.post("/s", (req, res) => {
+    console.log(req.body);
+    res.send("Success");
   });
 };
 

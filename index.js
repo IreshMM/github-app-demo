@@ -12,7 +12,7 @@ const simpleGit = require("simple-git")(process.env.WORKSPACE);
 module.exports = app => {
   const qualityGate = new QualityGate();
 
-  app.on("pull_request.opened", async context => {
+  app.on("push", async context => {
     await cleanWorkspace(getCommitSha(context));
     await cloneCommit(context);
     startSonarQubeScan(context);

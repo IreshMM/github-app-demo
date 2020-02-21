@@ -12,7 +12,7 @@ module.exports = app => {
 	const qualityGate = new QualityGate();
 
 	app.on("pull_request.opened", async context => {
-		await cleanWorkspace();
+		await cleanWorkspace(getCommitSha(context));
 		await cloneCommit(context);
 		startSonarQubeScan(context);
 		setCommitStatus(context, 'pending');
@@ -39,8 +39,8 @@ module.exports = app => {
 	});
 };
 
-function cleanWorkspace() {
-	rimraf.sync(`${process.env.WORKSPACE}/*`);
+function cleanWorkspace(commitSha) {
+	rimraf.sync(`${process.env.WORKSPACE}/${commitSha}/*`);
 }
 
 function getCommitSha(context) {
@@ -50,6 +50,7 @@ function getCommitSha(context) {
 async function cloneCommit(context) {
 	const cloneUrl = context.payload.pull_request.base.repo.clone_url;
 	const ref = context.payload.pull_request.head.ref;
+	const sha = getCommitSha(context)
 	await simpleGit.clone(cloneUrl, [
 		"--single-branch",
 		`--branch=${ref}`,

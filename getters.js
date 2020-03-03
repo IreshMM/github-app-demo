@@ -1,5 +1,5 @@
 function getCommitSha(payload) {
-  return payload.pull_request.head.sha;
+  return payload.head_commit.id;
 }
 
 function getBranch(payload) {
@@ -20,7 +20,7 @@ function getRepoName(payload) {
 }
 
 function getOwner(payload) {
-  return payload.repository.owner;
+  return payload.repository.owner.name;
 }
 
 module.exports = {

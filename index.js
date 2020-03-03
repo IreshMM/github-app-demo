@@ -13,7 +13,7 @@ module.exports = app => {
   const qualityGate = new QualityGate();
 
   app.on("push", async context => {
-    await cleanWorkspace(getCommitSha(context));
+    await cleanWorkspace(getters.getCommitSha(context.payload));
     await cloneCommit(context);
     startSonarQubeScan(context);
     setCommitStatus(context, "pending");
@@ -42,28 +42,28 @@ module.exports = app => {
 };
 
 function cleanWorkspace(commitSha) {
-  rimraf.sync(`${process.env.WORKSPACE}/${commitSha}/*`);
+  rimraf.sync(`${process.env.WORKSPACE}/${commitSha}`);
 }
 
 async function cloneCommit(context) {
   const cloneUrl = getters.getCloneUrl(context.payload);
-  const ref = getters.getRef(context.payload);
+  const branch = getters.getBranch(context.payload);
   const sha = getters.getCommitSha(context.payload);
-  await simpleGit.clone(cloneUrl, [
+  await simpleGit.clone(cloneUrl, sha, [
     "--single-branch",
-    `--branch=${ref}`,
+    `--branch=${branch}`,
     "--depth=1"
   ]);
 }
 
 function startSonarQubeScan(context) {
-  const repoName = getters.getRepoName(context.payload);
+  const commitSha = getters.getCommitSha(context.payload);
   const mvn = require("maven").create({
-    cwd: `${process.env.WORKSPACE}/${repoName}`
+    cwd: `${process.env.WORKSPACE}/${commitSha}`
   });
 
   mvn
-    .execute(["clean", "install", "sonar:sonar"], { skipTests: true })
+    .execute(["clean", "install", "sonar:sonar"], {skipTests: true})
     .then(() => {
       console.log("done");
     });
@@ -83,9 +83,9 @@ function updateQualityGateStatus(payload, qualityGate) {
 }
 
 function setCommitStatus(payloadContext, commitStatus) {
-  const owner = payloadContext.payload.pull_request.head.repo.owner.login;
-  const repo = payloadContext.payload.pull_request.head.repo.name;
-  const sha = payloadContext.payload.pull_request.head.sha;
+  const owner = getters.getOwner(payloadContext.payload);
+  const repo = getters.getRepoName(payloadContext.payload);
+  const sha = getters.getCommitSha(payloadContext.payload);
   const state = commitStatus;
   const description = "CI Test - Check quality of code";
   const context = "SonarQube Quality Gate";
